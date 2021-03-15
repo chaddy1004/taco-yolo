@@ -3,7 +3,7 @@ from dotmap import DotMap
 import os
 from collections import defaultdict
 
-
+import cv2
 def parse_json(json_file, config):
     with open(json_file) as file:
         data = DotMap(json.load(file))
@@ -11,6 +11,7 @@ def parse_json(json_file, config):
     filenames = []
     bboxes = defaultdict(list)
     labels = []
+
 
     images = data.images
     # might not be neccessary as i think its already sorted, but im just gonna leave the code here anyway
@@ -33,3 +34,18 @@ def parse_json(json_file, config):
         bboxes[img_id].append((bbox, label))
 
     return filenames, bboxes, labels
+
+
+def crop_images_and_get_labels_for_supervised(filename, bboxes_and_labels):
+    # going through all the images
+    cropped_images = []
+    labels = []
+    img_bgr = cv2.imread(filename)
+    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    # going through all the objects in the given image
+    for bbox, label in bboxes_and_labels:
+        x1, y1, x2, y2 = bbox
+        labels.append(label)
+        cropped_images.append(img_rgb[y1:y2, x1:x2])
+
+    return cropped_images, labels

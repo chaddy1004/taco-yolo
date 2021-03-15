@@ -5,7 +5,10 @@ import scipy.ndimage as ndimage
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 
-from utils.data_utils import parse_json
+from utils.data_utils import parse_json, crop_images_and_get_labels_for_supervised
+
+from sklearn.model_selection import train_test_split
+
 
 def _random_rotate(img_arr, max_angle):
     image_arr = ndimage.rotate(img_arr, np.random.uniform(-max_angle, max_angle), reshape=False)
@@ -20,17 +23,24 @@ def _gaussain_noise(img_arr, var=0.1):
     return img_noisy
 
 
-def create_dataset_from_json(json, config):
+def create_dataset_from_json_sl(json, config):
     filenames, bboxes, labels = parse_json(json, config)
 
-    x_train = normalize_img(x_train)
-    x_test = normalize_img(x_test)
-    y_train_oh = scalar_to_onehot(y_train, 10)
-    y_test_oh = scalar_to_onehot(y_test, 10)
+    # there arnt that many images, so we can just store it in memory instead of reading it from harddrive everytime
+    x_data = []
+    y_data = []
+    for img_id, filename in enumerate(filenames):
+        bboxes_per_img = bboxes[img_id]
+        object_images_cropped, labels = crop_images_and_get_labels_for_supervised(filename, bboxes_per_img)
+        x_data += object_images_cropped
+        y_data += labels
+
+    x_train, x_test, y_train, y_test = train_test_split(test_size=0.4, random_state=19920312, shuffle=True)
+
     image_train = tf.data.Dataset.from_tensor_slices(x_train[..., np.newaxis])
-    label_train = tf.data.Dataset.from_tensor_slices(y_train_oh)
+    label_train = tf.data.Dataset.from_tensor_slices(y_train)
     image_test = tf.data.Dataset.from_tensor_slices(x_test[..., np.newaxis])
-    label_test = tf.data.Dataset.from_tensor_slices(y_test_oh)
+    label_test = tf.data.Dataset.from_tensor_slices(y_test)
 
     def tf_random_rotate(img_tensor):
         im_shape = img_tensor.shape
