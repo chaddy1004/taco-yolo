@@ -5,6 +5,7 @@ import scipy.ndimage as ndimage
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 
+from utils.data_utils import parse_json
 
 def _random_rotate(img_arr, max_angle):
     image_arr = ndimage.rotate(img_arr, np.random.uniform(-max_angle, max_angle), reshape=False)
@@ -19,8 +20,9 @@ def _gaussain_noise(img_arr, var=0.1):
     return img_noisy
 
 
-def create_dataset(config):
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+def create_dataset_from_json(json, config):
+    filenames, bboxes, labels = parse_json(json, config)
+
     x_train = normalize_img(x_train)
     x_test = normalize_img(x_test)
     y_train_oh = scalar_to_onehot(y_train, 10)

@@ -1,0 +1,37 @@
+---
+exp:
+  experiment_dir: "/Users/user/exps"
+  overfit: false
+data:
+  root_dir: "data"
+  input_h: 224
+  input_w: 224
+  in_channel: 3
+  n_classes: 60 # http://tacodataset.org/stats
+  n_workers: 16
+  augmentation:
+    colour: true
+    geometric: true
+model:
+  backbone: "ResNet"
+  use_pretrained_resnet: true
+  use_pretrained_backbone: false
+  hyperparameters:
+    lr: 0.001
+    beta1: 0.9
+    beta2: 0.999
+    clipvalue: 0
+    clipnorm: 0
+    loss_weights:
+      bce_loss: 1
+
+trainer:
+  freeze_backbone: false
+  use_mixup: false
+  num_epochs: 150
+  train_batch_size: 128
+  valid_batch_size: 128
+  save_checkpoint_freq: 1
+  log_freq: 150
+  n_gpus: 1
+  valid_epoch_freq: 1
