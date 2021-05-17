@@ -44,6 +44,9 @@ detect.py is written based on the [code from the original repository](https://gi
 
 
 ## Running on test images
+The code performs prediction on the images under the directory, text_imgs. The predicted result (bounding boxes drawn on the original image)
+gets saved under the directory outputs.
+You can use the currently loaded sample images, or use your own images for testing.
 
 
 
