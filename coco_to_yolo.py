@@ -2,10 +2,10 @@ import os
 import json
 from dotmap import DotMap
 from collections import defaultdict
-from glob import glob
 import shutil
 import cv2
 from tqdm import tqdm
+
 
 def move_data(source_dir, target_dir, data):
     img_id_dict = defaultdict()
