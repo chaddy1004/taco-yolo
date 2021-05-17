@@ -41,8 +41,10 @@ Therefore, this repository only took the essential code that is needed for predi
 The code under directories [models](https://github.com/chaddy1004/taco-yolo/tree/using_existing_repo/models) and [utils](https://github.com/chaddy1004/taco-yolo/tree/using_existing_repo/utils) are directly from the original repository, and are required in model loading and detection process.
 
 detect.py is written based on the [code from the original repository](https://github.com/ultralytics/yolov5/blob/master/detect.py). It only has the functionality of predicting the result given a single image.
-
-
+The code can be ran simply using
+```bash
+python detect.py
+```
 ## Running on test images
 The code performs prediction on the images under the directory, text_imgs. The predicted result (bounding boxes drawn on the original image)
 gets saved under the directory outputs.
