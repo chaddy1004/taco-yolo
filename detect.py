@@ -9,7 +9,7 @@ import torchvision
 from torch import nn
 
 from utils.datasets import letterbox
-from utils.general import check_img_size, non_max_suppression, scale_coords, xyxy2xywh
+from utils.general import check_img_size, non_max_suppression, scale_coords
 from utils.plots import plot_one_box
 from utils.torch_utils import time_synchronized
 from models.common import Conv
@@ -34,15 +34,14 @@ def load_model(weight, map_location=None):
     return model
 
 
-def detect(model, test_path, save_dir, save_img=False, names=None):
+def detect(model, test_path, save_dir, save_img=False):
     img_size = 640
     stride = int(model.stride.max())  # model stride
     img_size = check_img_size(img_size, s=stride)  # check img_size
 
-    # Get names and colors
-    if names is None:
-        names = model.module.names if hasattr(model, 'module') else model.names
-
+    # Get names (labels) that the model predicts
+    names = model.module.names if hasattr(model, 'module') else model.names
+    # randomly assign colours to each label
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
@@ -52,33 +51,40 @@ def detect(model, test_path, save_dir, save_img=False, names=None):
     imgs = glob(os.path.join(test_path, "*.jpg"))
     for img_file in imgs:
         # the model takes in RGB
-        im0 = cv2.imread(img_file)
-        img = cv2.imread(img_file)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        im0 = cv2.imread(img_file)  # need one that is not modified. This gets used for saving later on as well
+
+        img = cv2.imread(img_file)  # load img used for actual model
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # refer to line 188 pf dataset.py from yolov5 repo
+
         # the resizing technique used by this project
         img = letterbox(img, (img_size, img_size), stride=32)[0]  # using the default values
+
+        # testing with shape 640x640 which is the shape used during training
         # img = cv2.resize(img, (img_size, img_size))
-        # img /= 255.0 # normalization
+
         # change (HxWxC) -> (CxHxW)
-        img_tensor = torchvision.transforms.ToTensor()(
-            img)  # this takes care of normalization as well. I did not know that
-        # img_tensor = img_tensor.half() if half else img_tensor.float()  # uint8 to fp16/32
+        img_tensor = torchvision.transforms.ToTensor()(img)  # this takes care of normalization as well
+        img_tensor = img_tensor.half() if half else img_tensor.float()  # uint8 to fp16/32
+
+        # add dimension for batch if there is not one
         if img_tensor.ndimension() == 3:
             img_tensor = img_tensor.unsqueeze(0)
 
         t1 = time_synchronized()
+
         with torch.no_grad():
             pred = model(img_tensor, augment=False)[0]  # returns y, None
 
-            pred = non_max_suppression(pred, conf_thres=0.05, iou_thres=0.7, classes=None, agnostic=False)
+        # perform NMS on the prediction to get list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+        pred = non_max_suppression(pred, conf_thres=0.08, iou_thres=0.01, classes=None, agnostic=False)
+
         t2 = time_synchronized()
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             save_name = img_file.split("/")[-1].split(".")[0] + f"_output_{i}.jpg"
             s = ''
-            s += '%gx%g ' % img_tensor.shape[2:]  # print string
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            s += f'Shape: {img_tensor.shape[2:]}'  # print string
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img_tensor.shape[2:], det[:, :4], im0.shape).round().detach()
@@ -94,10 +100,8 @@ def detect(model, test_path, save_dir, save_img=False, names=None):
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    line = (cls, *xywh, conf)
-
-                    if save_img:  # Add bbox to image
+                    if save_img:
+                        # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
@@ -106,7 +110,6 @@ def detect(model, test_path, save_dir, save_img=False, names=None):
             cv2.imwrite(os.path.join(save_dir, save_name), im0)
 
     print(f"Results saved to {save_dir}")
-
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
@@ -184,4 +187,4 @@ if __name__ == '__main__':
         model.half()  # to FP16
 
     test_path = "test_imgs"
-    detect(model=model, test_path=test_path, save_img=True, save_dir=save_dir, names=None)
+    detect(model=model, test_path=test_path, save_img=True, save_dir=save_dir)
