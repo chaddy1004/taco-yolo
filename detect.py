@@ -76,7 +76,7 @@ def detect(model, test_path, save_dir, save_img=False):
             pred = model(img_tensor, augment=False)[0]  # returns y, None
 
         # perform NMS on the prediction to get list of detections, on (n,6) tensor per image [xyxy, conf, cls]
-        pred = non_max_suppression(pred, conf_thres=0.08, iou_thres=0.01, classes=None, agnostic=False)
+        pred = non_max_suppression(pred, conf_thres=0.1, iou_thres=0.1, classes=None, agnostic=False)
 
         t2 = time_synchronized()
 
