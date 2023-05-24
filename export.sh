@@ -1,1 +1,1 @@
-python export.py --weights best.pt --img 640 --batch 1
+python export.py --weights best.pt --img 640 --batch-size 1

@@ -14,6 +14,8 @@ from utils.plots import plot_one_box
 from utils.torch_utils import time_synchronized
 from models.common import Conv
 
+from tqdm import tqdm
+
 if torch.cuda.device_count() > 0:
     print("RUNNING ON GPU")
     DEVICE = torch.device('cuda')
@@ -49,7 +51,7 @@ def detect(model, test_path, save_dir, save_img=False):
         model(torch.zeros(1, 3, img_size, img_size).to(DEVICE).type_as(next(model.parameters())))  # run once
     t0 = time.time()
     imgs = glob(os.path.join(test_path, "*.jpg"))
-    for img_file in imgs:
+    for img_file in tqdm(imgs):
         # the model takes in RGB
         im0 = cv2.imread(img_file)  # need one that is not modified. This gets used for saving later on as well
 
